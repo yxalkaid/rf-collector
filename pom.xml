@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.yxalkaid</groupId>
+    <artifactId>rf-collector</artifactId>
+    <version>1.0.0</version>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+
+        <!-- ltkjava -->
+        <dependency>
+            <groupId>com.yxalkaid.local</groupId>
+            <artifactId>ltkjava</artifactId>
+            <version>10.16.0.240</version>
+        </dependency>
+        <!-- <dependency>
+            <groupId>com.yxalkaid.local</groupId>
+            <artifactId>ltkjava</artifactId>
+            <version>10.16.0.240</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/ltkjava-10.16.0.240.jar</systemPath>
+        </dependency> -->
+
+        <!-- javacsv -->
+        <dependency>
+            <groupId>net.sourceforge.javacsv</groupId>
+            <artifactId>javacsv</artifactId>
+            <version>2.0</version>
+        </dependency>
+
+        <!-- lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.32</version>
+        </dependency>
+
+    </dependencies>
+    
+</project>
