@@ -1,43 +1,32 @@
-package com.yxalkaid.listener;
+package com.yxalkaid.rfcollector.controller;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
-import com.yxalkaid.recorder.BaseRecorder;
+import com.yxalkaid.rfcollector.recorder.BaseRecorder;
 
-import lombok.extern.log4j.Log4j;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * UDP监听控制器
  */
 @Slf4j
-public class UdpListener implements Runnable {
-    
+public class UdpController extends BaseController {
+
     /**
      * 监听端口
      */
     private final int port;
 
-    /**
-     * RFID 记录器
-     */
-    private final BaseRecorder recorder;
-
-    /**
-     * 是否运行中
-     */
-    private volatile boolean isRunning = true;
-
-    public UdpListener(BaseRecorder recorder,int port) {
-        this.recorder = recorder;
+    public UdpController(BaseRecorder recorder, int port) {
+        super(recorder);
         this.port = port;
     }
 
     @Override
     public void run() {
         try (DatagramSocket socket = new DatagramSocket(this.port)) {
-            log.info("UDP listener started on port " + this.port);
+            log.info("UDP listener started on port {}", this.port);
 
             byte[] buffer = new byte[1024];
             while (isRunning && !Thread.interrupted()) {
@@ -45,7 +34,7 @@ public class UdpListener implements Runnable {
                 socket.receive(packet);
 
                 String command = new String(packet.getData(), 0, packet.getLength()).trim();
-                log.info("Received UDP command: " + command);
+                log.info("Received UDP command: {}", command);
 
                 // 处理命令
                 if ("START".equalsIgnoreCase(command)) {
@@ -58,7 +47,7 @@ public class UdpListener implements Runnable {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error during UDP command processing", e);
         }
     }
 

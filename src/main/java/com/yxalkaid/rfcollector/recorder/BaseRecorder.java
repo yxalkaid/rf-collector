@@ -1,11 +1,14 @@
-package com.yxalkaid.recorder;
+package com.yxalkaid.rfcollector.recorder;
 
-import lombok.extern.log4j.Log4j;
+import com.yxalkaid.rfcollector.domain.SimpleTag;
 import lombok.extern.slf4j.Slf4j;
 import org.jdom.JDOMException;
 import org.llrp.ltk.exceptions.InvalidLLRPMessageException;
 import org.llrp.ltk.generated.custom.messages.IMPINJ_ENABLE_EXTENSIONS;
 import org.llrp.ltk.generated.custom.messages.IMPINJ_ENABLE_EXTENSIONS_RESPONSE;
+import org.llrp.ltk.generated.custom.parameters.ImpinjPeakRSSI;
+import org.llrp.ltk.generated.custom.parameters.ImpinjRFDopplerFrequency;
+import org.llrp.ltk.generated.custom.parameters.ImpinjRFPhaseAngle;
 import org.llrp.ltk.generated.enumerations.GetReaderCapabilitiesRequestedData;
 import org.llrp.ltk.generated.enumerations.GetReaderConfigRequestedData;
 import org.llrp.ltk.generated.enumerations.StatusCode;
@@ -21,6 +24,7 @@ import org.llrp.ltk.util.Util;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
@@ -58,7 +62,7 @@ public class BaseRecorder implements LLRPEndpoint {
      * @param RoSpecPath
      */
     public void open(String host, String configPath, String RoSpecPath) {
-        if (this.connection != null){
+        if (this.connection != null) {
             return;
         }
 
@@ -112,7 +116,7 @@ public class BaseRecorder implements LLRPEndpoint {
         log.info("Disconnected from reader");
     }
 
-    public void start(){
+    public void start() {
         if (this.connection == null) {
             return;
         }
@@ -121,13 +125,22 @@ public class BaseRecorder implements LLRPEndpoint {
         this.startRoSpec();
     }
 
-    public void stop(){
+    public void stop() {
         if (this.connection == null) {
             return;
         }
 
         this.stopRoSpec();
         this.disableRoSpec();
+    }
+
+    public boolean isConnecting(){
+        return this.connection != null;
+    }
+
+    @Override
+    public void errorOccured(String s) {
+        log.error(s);
     }
 
     @Override
@@ -137,48 +150,102 @@ public class BaseRecorder implements LLRPEndpoint {
             RO_ACCESS_REPORT report = (RO_ACCESS_REPORT) message;
 
             List<TagReportData> tdlist = report.getTagReportDataList();
+            this.processTagReports(tdlist);
 
-            for (TagReportData tr : tdlist) {
-                logOneTagReport(tr);
-            }
-
-            List<Custom> clist = report.getCustomList();
-            for (Custom custom : clist) {
-                logOneCustom(custom);
-            }
-
-
+            List<Custom> customList = report.getCustomList();
+            this.processCustomReports(customList);
         } else if (message.getTypeNum() == READER_EVENT_NOTIFICATION.TYPENUM) {
-            // TODO
+            // log.info("Reader Event Notification");
+        } else if (message.getTypeNum() == KEEPALIVE.TYPENUM) {
+            // log.info("Keep Alive");
         }
     }
 
-    @Override
-    public void errorOccured(String s) {
-        log.error(s);
+    /**
+     * 处理TagReport
+     *
+     * @param tdList
+     */
+    protected void processTagReports(List<TagReportData> tdList) {
+        if (tdList == null || tdList.isEmpty()) {
+            return;
+        }
+
+        log.info("Received Tag Reports: {}", tdList.size());
     }
 
     /**
-     * 处理Custom信息
+     * 处理CustomReport
      *
-     * @param custom
+     * @param customList
      */
-    protected void logOneCustom(Custom custom) {
-
-        if (!custom.getVendorIdentifier().equals(25882)) {
-            log.error("Non Impinj Extension Found in message");
+    protected void processCustomReports(List<Custom> customList) {
+        if (customList == null || customList.isEmpty()) {
             return;
         }
     }
 
     /**
-     * 处理TagReportData信息
+     * 构建SimpleTag
      *
      * @param tr
+     * @return
      */
-    protected void logOneTagReport(TagReportData tr) {
-    }
+    protected SimpleTag buildSimpleTag(TagReportData tr) {
+        if (tr.getEPCParameter() == null) {
+            return null;
+        }
+        SimpleTag tag = new SimpleTag();
 
+        LLRPParameter epcParameter = (LLRPParameter) tr.getEPCParameter();
+        if (epcParameter.getName().equals("EPC_96")) {
+            EPC_96 epc96 = (EPC_96) epcParameter;
+            tag.setEpc(epc96.getEPC().toString());
+        } else if (epcParameter.getName().equals("EPCData")) {
+            EPCData epcData = (EPCData) epcParameter;
+            tag.setEpc(epcData.getEPC().toString());
+        }
+
+        if (tr.getAntennaID() != null) {
+            short antennaId = tr.getAntennaID().getAntennaID().toShort();
+            tag.setAntennaId(antennaId);
+        }
+
+        if (tr.getChannelIndex() != null) {
+            int channelIndex = tr.getChannelIndex().getChannelIndex().intValue();
+            tag.setChannelIndex(channelIndex);
+        }
+
+        if (tr.getFirstSeenTimestampUTC() != null) {
+            long firstSeenTime = tr.getFirstSeenTimestampUTC().getMicroseconds().toLong();
+            tag.setFirstSeenTime(firstSeenTime);
+        }
+
+        if (tr.getLastSeenTimestampUTC() != null) {
+            long lastSeenTime = tr.getLastSeenTimestampUTC().getMicroseconds().toLong();
+            tag.setLastSeenTime(lastSeenTime);
+        }
+
+        if (tr.getTagSeenCount() != null) {
+            short tagSeenCount = tr.getTagSeenCount().getTagCount().toShort();
+            tag.setTagSeenCount(tagSeenCount);
+        }
+
+        for (Custom custom : tr.getCustomList()) {
+            if (custom instanceof ImpinjRFDopplerFrequency) {
+                ImpinjRFDopplerFrequency doppler = (ImpinjRFDopplerFrequency) custom;
+                tag.setDopplerFrequencyRaw(doppler.getDopplerFrequency().toShort());
+            } else if (custom instanceof ImpinjRFPhaseAngle) {
+                ImpinjRFPhaseAngle phase = (ImpinjRFPhaseAngle) custom;
+                tag.setPhaseRaw(phase.getPhaseAngle().toShort());
+            } else if (custom instanceof ImpinjPeakRSSI) {
+                ImpinjPeakRSSI rssi = (ImpinjPeakRSSI) custom;
+                tag.setPeakRssiRaw(rssi.getRSSI().toShort());
+            }
+        }
+
+        return tag;
+    }
 
     /**
      * 获取一个唯一消息ID

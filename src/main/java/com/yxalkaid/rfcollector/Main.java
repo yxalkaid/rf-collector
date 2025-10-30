@@ -1,13 +1,13 @@
-package com.yxalkaid;
+package com.yxalkaid.rfcollector;
 
 import java.net.URL;
 import java.nio.file.Path;
 
-import com.yxalkaid.listener.CommandListener;
+import com.yxalkaid.rfcollector.controller.CommandController;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.PropertyConfigurator;
 
-import com.yxalkaid.recorder.CsvRecorder;
+import com.yxalkaid.rfcollector.recorder.CsvRecorder;
 
 @Slf4j
 public class Main {
@@ -18,7 +18,7 @@ public class Main {
         String RESOURCE_PATH = "./src/main/resources";
 
         try {
-            URL resourceUrl = Main.class.getClassLoader().getResource("log4j.properties");
+            URL resourceUrl = Main.class.getClassLoader().getResource("log4j.xml");
             if (resourceUrl != null) {
                 Path resourcePath = Path.of(resourceUrl.toURI());
                 RESOURCE_PATH = resourcePath.getParent().toString();
@@ -33,7 +33,7 @@ public class Main {
         PropertyConfigurator.configure(Path.of(RESOURCE_PATH, "log4j.xml").toString());
 
 
-        final CsvRecorder recorder = new CsvRecorder("./output", false);
+        final CsvRecorder recorder = new CsvRecorder("./output");
 
         /*
          * 特别注意
@@ -69,7 +69,7 @@ public class Main {
         try {
 
             // 命令行控制
-            Runnable listener = new CommandListener(recorder, 1000 * 20);
+            Runnable listener = new CommandController(recorder, 1000 * 20);
 
             Thread listenerThread = new Thread(listener);
             listenerThread.start();

@@ -31,6 +31,14 @@
             <systemPath>${project.basedir}/lib/ltkjava-10.16.0.240.jar</systemPath>
         </dependency> -->
 
+        <!-- <dependency> -->
+        <!--     <groupId>com.yxalkaid.local</groupId> -->
+        <!--     <artifactId>OctaneSDKJava</artifactId> -->
+        <!--     <version>3.0.0.0</version> -->
+        <!--     <scope>system</scope> -->
+        <!--     <systemPath>${project.basedir}/lib/OctaneSDKJava-3.0.0.0.jar</systemPath> -->
+        <!-- </dependency> -->
+
         <!-- javacsv -->
         <dependency>
             <groupId>net.sourceforge.javacsv</groupId>
@@ -46,5 +54,5 @@
         </dependency>
 
     </dependencies>
-    
+
 </project>

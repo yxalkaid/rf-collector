@@ -1,41 +1,26 @@
-package com.yxalkaid.listener;
+package com.yxalkaid.rfcollector.controller;
 
-import java.util.Scanner;
-
-import com.yxalkaid.recorder.BaseRecorder;
-
-import lombok.extern.log4j.Log4j;
+import com.yxalkaid.rfcollector.recorder.BaseRecorder;
 import lombok.extern.slf4j.Slf4j;
+import java.util.Scanner;
 
 /**
  * 命令行监听控制器
  */
 @Slf4j
-public class CommandListener implements Runnable {
+public class CommandController extends BaseController {
 
     // 单次采集时长
     private final long duration;
 
-    /**
-     * RFID 记录器
-     */
-    private final BaseRecorder recorder;
-
-    /**
-     * 是否运行中
-     */
-    private volatile boolean isRunning = true;
-
-    public CommandListener(BaseRecorder recorder, long duration) {
-        this.recorder = recorder;
+    public CommandController(BaseRecorder recorder, long duration) {
+        super(recorder);
         this.duration = duration;
     }
 
     @Override
     public void run() {
-        Scanner input = null;
-        try {
-            input = new Scanner(System.in);
+        try (Scanner input = new Scanner(System.in)) {
             while (isRunning && !Thread.interrupted()) {
                 isRunning = false;
                 System.out.println("Please enter 'P' to start collection");
@@ -53,11 +38,7 @@ public class CommandListener implements Runnable {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (input != null) {
-                input.close();
-            }
+            log.error("Error during command collection", e);
         }
     }
 
